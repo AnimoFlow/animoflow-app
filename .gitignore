@@ -1,0 +1,25 @@
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.venv*/
+venv/
+*.egg-info/
+build/
+dist/
+
+# Local secrets / runtime
+.env
+.env.local
+output/
+.weights/
+.checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp

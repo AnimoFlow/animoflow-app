@@ -1,0 +1,25 @@
+# Don't ship local junk into the image
+__pycache__
+*.pyc
+*.pyo
+.pytest_cache
+.venv
+venv
+.git
+.gitignore
+.dockerignore
+*.egg-info
+build
+dist
+.env
+.env.local
+output
+.weights
+.checkpoints
+.DS_Store
+.vscode
+.idea
+README.md
+LICENSE
+docs
+tests
