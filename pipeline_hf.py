@@ -588,20 +588,31 @@ def _run_tail(
                 raise RuntimeError("rig stage reached with no BVH (missing ik stage?)")
             _stage("Rigging…", 0.80)
             _t = time.perf_counter()
-            retargeter = _get_retargeter()
             character = spec.params["character"]
             chars_dir = Path(
                 os.environ.get("CHARACTERS_DIR", str(_COMFY_ROOT / "characters"))
             )
-            fbx_template = chars_dir / f"{character}.fbx"
-            if not fbx_template.exists():
-                raise RuntimeError(
-                    f"Character template not found: {fbx_template}. "
-                    f"Available: {[p.stem for p in chars_dir.glob('*.fbx')]}"
-                )
-            fbx_bytes, _rig_meta = retargeter.bvh_to_fbx(
-                bvh_bytes, fbx_template=str(fbx_template)
+
+            if str(_COMFY_ROOT) not in sys.path:
+                sys.path.insert(0, str(_COMFY_ROOT))
+            from robot_retarget.characters import (
+                is_robot_character,
+                retarget_to_robot_fbx,
             )
+
+            if is_robot_character(character):
+                fbx_bytes = retarget_to_robot_fbx(bvh_bytes, character, chars_dir)
+            else:
+                retargeter = _get_retargeter()
+                fbx_template = chars_dir / f"{character}.fbx"
+                if not fbx_template.exists():
+                    raise RuntimeError(
+                        f"Character template not found: {fbx_template}. "
+                        f"Available: {[p.stem for p in chars_dir.glob('*.fbx')]}"
+                    )
+                fbx_bytes, _rig_meta = retargeter.bvh_to_fbx(
+                    bvh_bytes, fbx_template=str(fbx_template)
+                )
             _timings["retarget"] = time.perf_counter() - _t
             log.info("[%s] retarget done: %d KB FBX", job_id, len(fbx_bytes) // 1024)
 
