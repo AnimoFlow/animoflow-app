@@ -630,12 +630,26 @@ def _run_tail(
             glb_path: Path | None = fbx_path.with_suffix(".glb")
             snap_info: dict | None = None
             snap_elapsed = 0.0
+            # Robot characters are precisely grounded at retarget; the
+            # humanoid vertex-percentile snap mis-shifts them. Skip it.
+            snap_flag = p["snap_to_ground"]
+            if snap_flag:
+                if str(_COMFY_ROOT) not in sys.path:
+                    sys.path.insert(0, str(_COMFY_ROOT))
+                from robot_retarget.characters import is_robot_character
+
+                if is_robot_character(character):
+                    snap_flag = False
+                    snap_info = {
+                        "applied": False,
+                        "reason": "robot character: grounded at retarget",
+                    }
             try:
                 options = stages.glb_export.GLBExportOptions(
                     fbx_path=str(fbx_path),
                     glb_path=str(glb_path),
                     character=character,
-                    snap_to_ground=p["snap_to_ground"],
+                    snap_to_ground=snap_flag,
                     characters_dir=os.environ.get(
                         "CHARACTERS_DIR", str(_COMFY_ROOT / "characters")),
                     cache_dir=str(_OUTPUT_DIR),
@@ -647,7 +661,7 @@ def _run_tail(
                     keyframe_builder_error_degrees=p["keyframe_builder_error_degrees"],
                 )
                 result = stages.glb_export.run_glb_export(options, timeout=120)
-                snap_info = result["snap_info"]
+                snap_info = result["snap_info"] or snap_info
                 snap_elapsed = result["snap_elapsed_s"]
             except Exception:  # noqa: BLE001
                 # GLB export is best-effort on the Space — the FBX is
