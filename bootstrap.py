@@ -744,11 +744,12 @@ def _clone_all(gh_token: str | None) -> None:
             auth_url = url.replace("https://", f"https://x-access-token:{gh_token}@")
             log.info("clone (private): %s → %s", name, target)
             _git_clone(auth_url, target)
-            _strip_remote_auth(target, url)
         else:
             log.info("clone (public): %s → %s", name, target)
             _git_clone(url, target)
 
+        # Pin BEFORE stripping remote credentials — the pin may need to
+        # fetch the commit, which requires auth on private repos.
         # Pin MDM to a known-good commit (HEAD diverged, see MDM_PINNED_COMMIT).
         if subdir == "mdm-codes" and MDM_PINNED_COMMIT:
             _pin_to_commit(target, MDM_PINNED_COMMIT, name)
@@ -759,6 +760,8 @@ def _clone_all(gh_token: str | None) -> None:
             _pin_to_commit(target, API_PINNED_COMMIT, name)
         if subdir == "GMR" and GMR_PINNED_COMMIT:
             _pin_to_commit(target, GMR_PINNED_COMMIT, name)
+        if private:
+            _strip_remote_auth(target, url)
 
     # Robot retargeting finds its pinned GMR checkout through GMR_HOME.
     os.environ.setdefault("GMR_HOME", str(EXTERNAL_DIR / "GMR"))
