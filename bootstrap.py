@@ -60,6 +60,13 @@ MDM_PINNED_COMMIT = os.environ.get("MDM_PINNED_COMMIT", "af061ca")
 COMFYUI_PINNED_COMMIT = os.environ.get("COMFYUI_PINNED_COMMIT", "")
 API_PINNED_COMMIT = os.environ.get("API_PINNED_COMMIT", "")
 
+# GMR (github.com/YanjieZe/GMR, MIT) powers robot-character retargeting.
+# Cloned pinned; installed WITHOUT its setup.py (which would pull the
+# research-only smplx package the BVH path never imports) — the solver
+# dependencies ship in requirements.txt instead. GMR_HOME points the
+# robot_retarget package at the checkout.
+GMR_PINNED_COMMIT = os.environ.get("GMR_PINNED_COMMIT", "bb1bbe40774794fceb2a7c579a3464a28e68c844")
+
 ANIMOFLOW_CHECKPOINTS_REPO = os.environ.get(
     "ANIMOFLOW_CHECKPOINTS_REPO", "AnimoFlow/animoflow-checkpoints"
 )
@@ -111,19 +118,33 @@ _DOCKER_MODE_PATHS = (
 )
 
 # What we need to clone. (repo_name, target_subdir, is_private).
+# The AnimoFlow repo URLs are env-overridable so a staging Space can run
+# against private staging mirrors without touching this file.
 _GIT_REPOS: tuple[tuple[str, str, str, bool], ...] = (
     # (full_url_template_or_url, target_subdir, friendly_name, private)
     (
-        "https://github.com/AnimoFlow/comfyui-animoflow.git",
+        os.environ.get(
+            "COMFYUI_REPO_URL",
+            "https://github.com/AnimoFlow/comfyui-animoflow.git",
+        ),
         "comfyui-animoflow",
         "comfyui-animoflow",
         True,
     ),
     (
-        "https://github.com/AnimoFlow/animoflow-api.git",
+        os.environ.get(
+            "API_REPO_URL",
+            "https://github.com/AnimoFlow/animoflow-api.git",
+        ),
         "animoflow-api",
         "animoflow-api",
         True,
+    ),
+    (
+        "https://github.com/YanjieZe/GMR.git",
+        "GMR",
+        "GMR (robot retargeting)",
+        False,
     ),
     (
         "https://github.com/GuyTevet/motion-diffusion-model.git",
@@ -736,6 +757,11 @@ def _clone_all(gh_token: str | None) -> None:
             _pin_to_commit(target, COMFYUI_PINNED_COMMIT, name)
         if subdir == "animoflow-api" and API_PINNED_COMMIT:
             _pin_to_commit(target, API_PINNED_COMMIT, name)
+        if subdir == "GMR" and GMR_PINNED_COMMIT:
+            _pin_to_commit(target, GMR_PINNED_COMMIT, name)
+
+    # Robot retargeting finds its pinned GMR checkout through GMR_HOME.
+    os.environ.setdefault("GMR_HOME", str(EXTERNAL_DIR / "GMR"))
 
 
 def _pin_to_commit(target: Path, commit: str, name: str) -> None:
