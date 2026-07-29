@@ -803,13 +803,17 @@ def run(
     # ── Stage 1: GPU inference ───────────────────────────────────────────
     _t = time.perf_counter()
     # Per-model conditioning kwargs come from the SHARED mapping — the
-    # same one the ComfyUI compiler uses for node inputs.
+    # same one the ComfyUI compiler uses for node inputs. Geometry comes
+    # from the COMPILED plan, never the raw request: the compiler owns
+    # input transforms (e.g. robot-character path pre-scaling), and reading
+    # the raw values here would silently skip them.
+    _gen_params = next(s for s in plan_specs if s.kind == "generate").params
     extra = stages.genparams.build_hf_gen_extra(
         model,
         num_frames=num_frames,
         cfg=cfg,
-        curve_2d=curve_2d,
-        waypoints=waypoints,
+        curve_2d=_gen_params.get("curve_2d"),
+        waypoints=_gen_params.get("waypoints"),
         accel_frac=accel_frac,
         decel_frac=decel_frac,
     )
