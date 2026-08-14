@@ -601,7 +601,11 @@ def _run_tail(
             )
 
             if is_robot_character(character):
-                fbx_bytes = retarget_to_robot_fbx(bvh_bytes, character, chars_dir)
+                # Newer retargeter revisions return (fbx_bytes, extra_info)
+                # instead of bare bytes; accept both shapes so this executor
+                # works against either pinned revision.
+                result = retarget_to_robot_fbx(bvh_bytes, character, chars_dir)
+                fbx_bytes = result[0] if isinstance(result, tuple) else result
             else:
                 retargeter = _get_retargeter()
                 fbx_template = chars_dir / f"{character}.fbx"
